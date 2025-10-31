@@ -51,9 +51,10 @@ header{
     background:#112233;
     border-radius:15px;
     padding:15px;
-    min-height:450px;
+    min-height:500px;
     position:relative;
     box-shadow:0 4px 10px rgba(0,0,0,0.5);
+    overflow:hidden;
 }
 canvas{
     background: #0d1b2a;
@@ -84,18 +85,37 @@ button.restart:hover{
     border-radius:10px;
     font-weight:bold;
 }
+.card{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+.card div{
+    width:60px; height:60px;
+    margin:5px;
+    background:#1e2a44;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:24px;
+    cursor:pointer;
+    border-radius:8px;
+    transition:0.2s;
+}
+.card div.flipped{
+    background: var(--primary);
+}
 </style>
 </head>
 <body>
 <header>Ayham Systems - BUILT FOR NEXT GEN</header>
 <div id="menu">
-    <button class="menu-btn" onclick="startGame('snake')">Snake</button>
     <button class="menu-btn" onclick="startGame('tic')">Tic-Tac-Toe</button>
     <button class="menu-btn" onclick="startGame('memory')">Memory Game</button>
     <button class="menu-btn" onclick="startGame('click')">Click Speed</button>
     <button class="menu-btn" onclick="startGame('pong')">Pong</button>
     <button class="menu-btn" onclick="startGame('maze')">Maze Runner</button>
-    <button class="menu-btn" onclick="startGame('snake2')">Snake 2</button>
+    <button class="menu-btn" onclick="startGame('dodger')">Dot Dodger</button>
     <button class="menu-btn" onclick="startGame('whack')">Whack-a-Mole</button>
     <button class="menu-btn" onclick="startGame('math')">Math Quiz</button>
     <button class="menu-btn" onclick="startGame('puzzle')">Puzzle Slider</button>
@@ -106,7 +126,7 @@ button.restart:hover{
     <button class="menu-btn" onclick="startGame('typing')">Typing Test</button>
 </div>
 <div id="container">
-    <p style="text-align:center;margin-top:180px;">Select a game from above to play!</p>
+    <p style="text-align:center;margin-top:200px;">Select a game from above to play!</p>
 </div>
 
 <script>
@@ -121,146 +141,442 @@ function clearGame(){
 }
 
 // ========================
-// 1. Snake
-function snakeGame(){
+// 1. Tic-Tac-Toe
+function ticTacToe(){
     clearGame();
-    const canvas=document.createElement('canvas'); canvas.width=400; canvas.height=400;
-    container.appendChild(canvas);
-    const ctx=canvas.getContext('2d');
-    let box=20, score=0;
-    let snake=[{x:200,y:200}];
-    let dir='RIGHT';
-    let food={x:Math.floor(Math.random()*20)*box, y:Math.floor(Math.random()*20)*box};
-    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
-    container.appendChild(scoreDiv);
-
-    document.onkeydown=(e)=>{
-        if(e.key==='ArrowUp'&&dir!=='DOWN')dir='UP';
-        if(e.key==='ArrowDown'&&dir!=='UP')dir='DOWN';
-        if(e.key==='ArrowLeft'&&dir!=='RIGHT')dir='LEFT';
-        if(e.key==='ArrowRight'&&dir!=='LEFT')dir='RIGHT';
-    }
-
+    container.innerHTML='<div class="card"></div>';
+    const card=document.querySelector('.card');
+    let board=['','','','','','','','',''];
+    let turn='X';
     function draw(){
-        ctx.fillStyle='#0d1b2a';
-        ctx.fillRect(0,0,400,400);
-
-        ctx.fillStyle='red';
-        ctx.fillRect(food.x,food.y,box,box);
-
-        for(const s of snake){
-            ctx.fillStyle='lime';
-            ctx.fillRect(s.x,s.y,box,box);
+        card.innerHTML='';
+        for(let i=0;i<9;i++){
+            const cell=document.createElement('div');
+            cell.innerText=board[i];
+            cell.onclick=()=>{ 
+                if(board[i]===''){
+                    board[i]=turn;
+                    turn=turn==='X'?'O':'X';
+                    draw();
+                    checkWin();
+                }
+            };
+            card.appendChild(cell);
         }
-
-        let head={x:snake[0].x, y:snake[0].y};
-        if(dir==='RIGHT') head.x+=box;
-        if(dir==='LEFT') head.x-=box;
-        if(dir==='UP') head.y-=box;
-        if(dir==='DOWN') head.y+=box;
-
-        // collision
-        if(head.x<0||head.x>=400||head.y<0||head.y>=400||snake.some(s=>s.x===head.x&&s.y===head.y)){
-            alert('Game Over! Score:'+score);
-            startGame('snake'); return;
+    }
+    function checkWin(){
+        const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        for(const w of wins){
+            if(board[w[0]]!=='' && board[w[0]]===board[w[1]] && board[w[1]]===board[w[2]]){
+                setTimeout(()=>{alert(board[w[0]]+' Wins!'); ticTacToe();},100);
+                return;
+            }
         }
-
-        snake.unshift(head);
-        if(head.x===food.x && head.y===food.y){
-            score++;
-            scoreDiv.innerText='Score:'+score;
-            food={x:Math.floor(Math.random()*20)*box, y:Math.floor(Math.random()*20)*box};
-        } else snake.pop();
-
-        requestAnimationFrame(draw);
+        if(board.every(c=>c!=='')){
+            setTimeout(()=>{alert('Tie!'); ticTacToe();},100);
+        }
     }
     draw();
 }
 
 // ========================
-// 14. Catch the Ball (arrow keys)
-function catchBall(){
+// 2. Memory Game
+function memoryGame(){
+    clearGame();
+    container.innerHTML='<div class="card"></div>';
+    const card=document.querySelector('.card');
+    const symbols=['🍎','🍌','🍇','🍓','🍒','🍍','🥝','🍉'];
+    const deck=[...symbols,...symbols].sort(()=>Math.random()-0.5);
+    let flipped=[];
+    let matched=0;
+    function draw(){
+        card.innerHTML='';
+        deck.forEach((s,i)=>{
+            const cell=document.createElement('div');
+            if(flipped.includes(i)||matchedIndices.includes(i)) cell.classList.add('flipped');
+            cell.innerText=(flipped.includes(i)||matchedIndices.includes(i))?deck[i]:'';
+            cell.onclick=()=>{ flip(i); };
+            card.appendChild(cell);
+        });
+    }
+    let matchedIndices=[];
+    function flip(i){
+        if(flipped.length<2 && !flipped.includes(i)){
+            flipped.push(i); draw();
+            if(flipped.length===2){
+                if(deck[flipped[0]]===deck[flipped[1]]){
+                    matchedIndices.push(...flipped);
+                    flipped=[];
+                    matched+=1;
+                    if(matched===symbols.length) setTimeout(()=>{alert('You win!'); memoryGame();},200);
+                }else{
+                    setTimeout(()=>{flipped=[]; draw();},500);
+                }
+            }
+        }
+    }
+    draw();
+}
+
+// ========================
+// 3. Click Speed Test
+function clickSpeed(){
+    clearGame();
+    container.innerHTML='<p style="text-align:center;">Click the button as fast as you can!</p>';
+    const btn=document.createElement('button'); btn.innerText='CLICK ME'; btn.className='restart';
+    container.appendChild(btn);
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    let score=0;
+    let time=5;
+    btn.onclick=()=>{score++; scoreDiv.innerText='Score:'+score;};
+    gameInterval=setInterval(()=>{
+        time-=0.1;
+        if(time<=0){
+            clearInterval(gameInterval);
+            alert('Time up! Score:'+score);
+            clickSpeed();
+        }
+    },100);
+}
+
+// ========================
+// 4. Pong
+function pongGame(){
     clearGame();
     const canvas=document.createElement('canvas'); canvas.width=400; canvas.height=400;
-    container.appendChild(canvas);
-    const ctx=canvas.getContext('2d');
-    let paddle={x:180,y:380,width:60,height:10};
-    let ball={x:Math.random()*380,y:0,r:10,dy:3};
+    container.appendChild(canvas); const ctx=canvas.getContext('2d');
+    let paddle={x:170,y:380,w:60,h:10};
+    let ball={x:200,y:200,dx:3,dy:-3,r:8};
     let score=0;
     const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
     container.appendChild(scoreDiv);
-
     document.onkeydown=(e)=>{
-        if(e.key==='ArrowLeft'){ paddle.x-=15; if(paddle.x<0)paddle.x=0; }
-        if(e.key==='ArrowRight'){ paddle.x+=15; if(paddle.x>340)paddle.x=340; }
-    }
-
+        if(e.key==='ArrowLeft') paddle.x-=15;
+        if(e.key==='ArrowRight') paddle.x+=15;
+        if(paddle.x<0)paddle.x=0;
+        if(paddle.x>340)paddle.x=340;
+    };
     function draw(){
-        ctx.fillStyle='#0d1b2a';
-        ctx.fillRect(0,0,400,400);
-
-        // ball
-        ctx.fillStyle='red';
-        ctx.beginPath();
-        ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-        ctx.fill();
-
-        // paddle
-        ctx.fillStyle='blue';
-        ctx.fillRect(paddle.x,paddle.y,paddle.width,paddle.height);
-
-        ball.y+=ball.dy;
-
-        if(ball.y+ball.r>=paddle.y && ball.x>paddle.x && ball.x<paddle.x+paddle.width){
-            score++;
-            scoreDiv.innerText='Score:'+score;
-            ball.y=0; ball.x=Math.random()*380;
+        ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,400,400);
+        ctx.fillStyle='blue'; ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+        ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fillStyle='red'; ctx.fill();
+        ball.x+=ball.dx; ball.y+=ball.dy;
+        if(ball.x+ball.r>400 || ball.x-ball.r<0) ball.dx*=-1;
+        if(ball.y-ball.r<0) ball.dy*=-1;
+        if(ball.y+ball.r>paddle.y && ball.y+ball.r<paddle.y+paddle.h && ball.x>paddle.x && ball.x<paddle.x+paddle.w){
+            ball.dy*=-1; score++; scoreDiv.innerText='Score:'+score;
         }
-
-        if(ball.y>400){
-            alert('Game Over! Score:'+score);
-            startGame('catch'); return;
-        }
-
-        requestAnimationFrame(draw);
+        if(ball.y>400) { alert('Game Over! Score:'+score); pongGame(); }
     }
+    gameInterval=setInterval(draw,20);
+}
 
+// ========================
+// 5. Maze Runner
+function mazeRunner(){
+    clearGame();
+    const canvas=document.createElement('canvas'); canvas.width=400; canvas.height=400;
+    container.appendChild(canvas); const ctx=canvas.getContext('2d');
+    const maze=[
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,1,0,0,0,0,1],
+        [1,0,1,0,1,0,1,1,0,1],
+        [1,0,1,0,0,0,0,1,0,1],
+        [1,0,1,1,1,1,0,1,0,1],
+        [1,0,0,0,0,1,0,0,0,1],
+        [1,1,1,1,0,1,1,1,0,1],
+        [1,0,0,1,0,0,0,1,0,1],
+        [1,0,0,0,0,1,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1],
+    ];
+    let player={x:1,y:1};
+    document.onkeydown=(e)=>{
+        if(e.key==='ArrowLeft' && maze[player.y][player.x-1]===0) player.x--;
+        if(e.key==='ArrowRight' && maze[player.y][player.x+1]===0) player.x++;
+        if(e.key==='ArrowUp' && maze[player.y-1][player.x]===0) player.y--;
+        if(e.key==='ArrowDown' && maze[player.y+1][player.x]===0) player.y++;
+        draw();
+        if(player.x===8 && player.y===8) setTimeout(()=>{alert('You Win!'); mazeRunner();},50);
+    };
+    function draw(){
+        ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,400,400);
+        for(let y=0;y<10;y++){
+            for(let x=0;x<10;x++){
+                if(maze[y][x]===1){ctx.fillStyle='blue'; ctx.fillRect(x*40,y*40,40,40);}
+            }
+        }
+        ctx.fillStyle='red'; ctx.fillRect(player.x*40,player.y*40,40,40);
+    }
     draw();
 }
 
 // ========================
-// Placeholder for other games (you can expand these similarly with animations and improved gameplay)
-function ticTacToe(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Tic-Tac-Toe coming soon!</p>"; }
-function memoryGame(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Memory Game coming soon!</p>"; }
-function clickSpeed(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Click Speed coming soon!</p>"; }
-function pongGame(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Pong coming soon!</p>"; }
-function mazeRunner(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Maze Runner coming soon!</p>"; }
-function snake2(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Snake 2 coming soon!</p>"; }
-function whackAMole(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Whack-a-Mole coming soon!</p>"; }
-function mathQuiz(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Math Quiz coming soon!</p>"; }
-function puzzleSlider(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Puzzle Slider coming soon!</p>"; }
-function flappyBird(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Flappy Bird coming soon!</p>"; }
-function simonSays(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Simon Says coming soon!</p>"; }
-function rockPaperScissors(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Rock Paper Scissors coming soon!</p>"; }
-function typingTest(){ clearGame(); container.innerHTML="<p style='text-align:center;margin-top:180px;'>Typing Test coming soon!</p>"; }
+// 6. Dot Dodger
+function dotDodger(){
+    clearGame();
+    const canvas=document.createElement('canvas'); canvas.width=400; canvas.height=400;
+    container.appendChild(canvas); const ctx=canvas.getContext('2d');
+    let player={x:180,y:360,w:40,h:20};
+    let dots=[];
+    let score=0;
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    document.onkeydown=(e)=>{
+        if(e.key==='ArrowLeft') player.x-=20;
+        if(e.key==='ArrowRight') player.x+=20;
+        if(player.x<0)player.x=0;
+        if(player.x>360)player.x=360;
+    };
+    function spawnDot(){
+        dots.push({x:Math.random()*380,y:0,r:10,dy:3+Math.random()*2});
+    }
+    function draw(){
+        ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,400,400);
+        ctx.fillStyle='green'; ctx.fillRect(player.x,player.y,player.w,player.h);
+        for(let i=dots.length-1;i>=0;i--){
+            let d=dots[i]; ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fillStyle='yellow'; ctx.fill();
+            d.y+=d.dy;
+            if(d.y>400){ dots.splice(i,1); }
+            if(d.y+d.r>player.y && d.y-d.r<player.y+player.h && d.x+d.r>player.x && d.x-d.r<player.x+player.w){
+                alert('Game Over! Score:'+score);
+                dotDodger();
+                return;
+            }
+        }
+        score+=0.01; scoreDiv.innerText='Score:'+Math.floor(score);
+    }
+    gameInterval=setInterval(draw,20);
+    setInterval(spawnDot,800);
+}
 
 // ========================
-function startGame(name){
-    switch(name){
-        case 'snake': snakeGame(); break;
-        case 'catch': catchBall(); break;
+// 7. Whack-a-Mole
+function whackAMole(){
+    clearGame();
+    container.innerHTML='<div class="card"></div>';
+    const card=document.querySelector('.card');
+    let score=0;
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    const holes=[];
+    for(let i=0;i<9;i++){holes.push(document.createElement('div')); card.appendChild(holes[i]);}
+    function molePop(){
+        holes.forEach(h=>h.innerText='');
+        const idx=Math.floor(Math.random()*9);
+        holes[idx].innerText='🐹';
+        holes[idx].onclick=()=>{
+            score++; scoreDiv.innerText='Score:'+score; holes[idx].innerText='';
+        }
+    }
+    gameInterval=setInterval(molePop,700);
+}
+
+// ========================
+// 8. Math Quiz
+function mathQuiz(){
+    clearGame();
+    const qDiv=document.createElement('div'); qDiv.style.textAlign='center'; qDiv.style.marginTop='50px';
+    container.appendChild(qDiv);
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    let score=0;
+    function nextQuestion(){
+        let a=Math.floor(Math.random()*20); let b=Math.floor(Math.random()*20);
+        let op=['+','-','*'][Math.floor(Math.random()*3)];
+        let ans=eval(a+op+b);
+        qDiv.innerHTML=`<p>${a} ${op} ${b} = ?</p>`;
+        const input=document.createElement('input'); input.type='number'; qDiv.appendChild(input);
+        const btn=document.createElement('button'); btn.className='restart'; btn.innerText='Submit';
+        btn.onclick=()=>{
+            if(Number(input.value)===ans) {score++; scoreDiv.innerText='Score:'+score;}
+            else alert('Wrong! Answer was '+ans);
+            nextQuestion();
+        };
+        qDiv.appendChild(btn);
+    }
+    nextQuestion();
+}
+
+// ========================
+// 9. Puzzle Slider
+function puzzleSlider(){
+    clearGame();
+    const size=3; let tiles=[];
+    function shuffle(){ return Math.random()-0.5; }
+    container.innerHTML='<div class="card"></div>';
+    const card=document.querySelector('.card');
+    for(let i=0;i<size*size-1;i++) tiles.push(i+1); tiles.push(''); tiles.sort(shuffle);
+    function draw(){
+        card.innerHTML='';
+        tiles.forEach((t,i)=>{
+            const cell=document.createElement('div');
+            cell.innerText=t;
+            cell.onclick=()=>{ move(i); };
+            card.appendChild(cell);
+        });
+    }
+    function move(i){
+        const empty=tiles.indexOf('');
+        const valid=[empty-1,empty+1,empty-size,empty+size];
+        if(valid.includes(i)){
+            [tiles[i],tiles[empty]]=[tiles[empty],tiles[i]];
+            draw();
+            if(tiles.join(',')==='1,2,3,4,5,6,7,8,') setTimeout(()=>{alert('You Win!'); puzzleSlider();},100);
+        }
+    }
+    draw();
+}
+
+// ========================
+// 10. Flappy Bird
+function flappyBird(){
+    clearGame();
+    const canvas=document.createElement('canvas'); canvas.width=400; canvas.height=400;
+    container.appendChild(canvas); const ctx=canvas.getContext('2d');
+    let bird={x:50,y:200,dy:0,r:10};
+    let pipes=[]; let score=0;
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    document.onkeydown=(e)=>{ if(e.key===' ') bird.dy=-5; }
+    function spawnPipe(){ pipes.push({x:400,height:100+Math.random()*150}); }
+    function draw(){
+        ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,400,400);
+        bird.dy+=0.3; bird.y+=bird.dy;
+        ctx.fillStyle='yellow'; ctx.beginPath(); ctx.arc(bird.x,bird.y,bird.r,0,Math.PI*2); ctx.fill();
+        for(let i=pipes.length-1;i>=0;i--){
+            let p=pipes[i]; p.x-=2;
+            ctx.fillStyle='green'; ctx.fillRect(p.x,0,40,p.height);
+            ctx.fillRect(p.x,p.height+100,40,400);
+            if(bird.x+bird.r>p.x && bird.x-bird.r<p.x+40 && (bird.y-bird.r<p.height || bird.y+bird.r>p.height+100)){
+                alert('Game Over! Score:'+score); flappyBird(); return;
+            }
+            if(p.x+40<bird.x && !p.scored){score++; p.scored=true; scoreDiv.innerText='Score:'+score;}
+            if(p.x+40<0)pipes.splice(i,1);
+        }
+        if(bird.y>400 || bird.y<0){alert('Game Over! Score:'+score); flappyBird(); return;}
+    }
+    gameInterval=setInterval(draw,20);
+    setInterval(spawnPipe,1500);
+}
+
+// ========================
+// 11. Simon Says
+function simonSays(){
+    clearGame();
+    container.innerHTML='<div class="card"></div>';
+    const card=document.querySelector('.card');
+    const colors=['red','blue','green','yellow'];
+    let seq=[]; let playerSeq=[];
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    colors.forEach(c=>{
+        const btn=document.createElement('div'); btn.style.background=c; btn.style.width='80px'; btn.style.height='80px'; btn.style.margin='5px';
+        btn.onclick=()=>{playerSeq.push(c); check(); };
+        card.appendChild(btn);
+    });
+    function next(){ seq.push(colors[Math.floor(Math.random()*4)]); playerSeq=[]; flash(); }
+    function flash(){
+        let i=0; let f=setInterval(()=>{
+            card.children[colors.indexOf(seq[i])].style.opacity='0.5';
+            setTimeout(()=>{card.children[colors.indexOf(seq[i])].style.opacity='1';},300);
+            i++; if(i>=seq.length) clearInterval(f);
+        },600);
+    }
+    function check(){
+        for(let i=0;i<playerSeq.length;i++){ if(playerSeq[i]!==seq[i]){ alert('Game Over!'); simonSays(); return; } }
+        if(playerSeq.length===seq.length){ scoreDiv.innerText='Score:'+seq.length; setTimeout(next,500); }
+    }
+    next();
+}
+
+// ========================
+// 12. Rock Paper Scissors
+function rpsGame(){
+    clearGame();
+    container.innerHTML='<div style="text-align:center;"></div>';
+    const div=container.children[0];
+    let score=0;
+    const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    const choices=['Rock','Paper','Scissors'];
+    choices.forEach(c=>{
+        const btn=document.createElement('button'); btn.className='restart'; btn.innerText=c; btn.onclick=()=>{
+            const comp=choices[Math.floor(Math.random()*3)];
+            if(c===comp) alert('Tie!'); 
+            else if((c==='Rock' && comp==='Scissors')||(c==='Paper' && comp==='Rock')||(c==='Scissors' && comp==='Paper')){
+                score++; scoreDiv.innerText='Score:'+score; alert('You Win! Computer chose '+comp);
+            } else alert('You Lose! Computer chose '+comp);
+        };
+        div.appendChild(btn);
+    });
+}
+
+// ========================
+// 13. Catch the Ball
+function catchBall(){
+    clearGame();
+    const canvas=document.createElement('canvas'); canvas.width=400; canvas.height=400;
+    container.appendChild(canvas); const ctx=canvas.getContext('2d');
+    let player={x:180,y:360,w:40,h:20}; let ball={x:Math.random()*360,y:0,r:10,dy:3};
+    let score=0; const scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0';
+    container.appendChild(scoreDiv);
+    document.onkeydown=(e)=>{
+        if(e.key==='ArrowLeft') player.x-=20;
+        if(e.key==='ArrowRight') player.x+=20;
+        if(player.x<0)player.x=0; if(player.x>360)player.x=360;
+    };
+    function draw(){
+        ctx.fillStyle='#0d1b2a'; ctx.fillRect(0,0,400,400);
+        ctx.fillStyle='blue'; ctx.fillRect(player.x,player.y,player.w,player.h);
+        ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fillStyle='red'; ctx.fill();
+        ball.y+=ball.dy;
+        if(ball.y+ball.r>player.y && ball.y-ball.r<player.y+player.h && ball.x+ball.r>player.x && ball.x-ball.r<player.x+player.w){
+            score++; scoreDiv.innerText='Score:'+score;
+            ball.y=0; ball.x=Math.random()*360;
+        }
+        if(ball.y>400){ alert('Missed! Score:'+score); catchBall(); return; }
+    }
+    gameInterval=setInterval(draw,20);
+}
+
+// ========================
+// 14. Typing Test
+function typingTest(){
+    clearGame();
+    container.innerHTML='<p style="text-align:center;margin-top:50px;">Type the text:</p><p id="text" style="text-align:center;font-size:20px;"></p>';
+    const input=document.createElement('input'); input.style.display='block'; input.style.margin='10px auto'; container.appendChild(input);
+    let scoreDiv=document.createElement('div'); scoreDiv.className='score-badge'; scoreDiv.innerText='Score:0'; container.appendChild(scoreDiv);
+    let score=0;
+    const texts=['Ayham','Systems','Next','Gen','Game','Blue','Pro','HTML','Fun','Play'];
+    function next(){
+        let t=texts[Math.floor(Math.random()*texts.length)];
+        document.getElementById('text').innerText=t;
+        input.value='';
+        input.oninput=()=>{
+            if(input.value===t){ score++; scoreDiv.innerText='Score:'+score; next(); }
+        }
+    }
+    next();
+}
+
+// ========================
+// Game starter
+function startGame(game){
+    switch(game){
         case 'tic': ticTacToe(); break;
         case 'memory': memoryGame(); break;
         case 'click': clickSpeed(); break;
         case 'pong': pongGame(); break;
         case 'maze': mazeRunner(); break;
-        case 'snake2': snake2(); break;
+        case 'dodger': dotDodger(); break;
         case 'whack': whackAMole(); break;
         case 'math': mathQuiz(); break;
         case 'puzzle': puzzleSlider(); break;
         case 'flappy': flappyBird(); break;
         case 'simon': simonSays(); break;
-        case 'rps': rockPaperScissors(); break;
+        case 'rps': rpsGame(); break;
+        case 'catch': catchBall(); break;
         case 'typing': typingTest(); break;
     }
 }
